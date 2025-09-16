@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import ServiceChip from '@components/ServiceChip';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useNavigation } from '@react-navigation/native';
+import { CHECKOUT_URLS } from '@config/payments';
 
 const SERVICES = [
   'Running Training',
@@ -18,8 +22,11 @@ const DURATIONS = [
 export default function BookScreen() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<typeof DURATIONS[number] | null>(null);
+  const [date, setDate] = useState<Date | null>(null);
+  const [time, setTime] = useState<Date | null>(null);
+  const navigation = useNavigation<any>();
 
-  const isReady = useMemo(() => !!selectedService && !!selectedDuration, [selectedService, selectedDuration]);
+  const isReady = useMemo(() => !!selectedService && !!selectedDuration && !!date && !!time, [selectedService, selectedDuration, date, time]);
 
   return (
     <View style={styles.container}>
@@ -28,32 +35,63 @@ export default function BookScreen() {
       <Text style={styles.sectionTitle}>1) Choose a service</Text>
       <View style={styles.rowWrap}>
         {SERVICES.map((svc) => (
-          <Pressable
-            key={svc}
-            style={[styles.choice, selectedService === svc && styles.choiceSelected]}
-            onPress={() => setSelectedService(svc)}
-          >
-            <Text style={[styles.choiceText, selectedService === svc && styles.choiceTextSelected]}>{svc}</Text>
-          </Pressable>
+          <ServiceChip key={svc} label={svc} selected={selectedService === svc} onPress={() => setSelectedService(svc)} />
         ))}
       </View>
 
       <Text style={styles.sectionTitle}>2) Duration</Text>
       <View style={styles.rowWrap}>
         {DURATIONS.map((d) => (
-          <Pressable
+          <ServiceChip
             key={d.minutes}
-            style={[styles.choice, selectedDuration?.minutes === d.minutes && styles.choiceSelected]}
+            label={`${d.label} · $${d.price}`}
+            selected={selectedDuration?.minutes === d.minutes}
             onPress={() => setSelectedDuration(d)}
-          >
-            <Text style={[styles.choiceText, selectedDuration?.minutes === d.minutes && styles.choiceTextSelected]}>
-              {d.label} · ${d.price}
-            </Text>
-          </Pressable>
+          />
         ))}
       </View>
 
-      <Pressable style={[styles.primaryCta, !isReady && styles.disabled]} disabled={!isReady} onPress={() => {}}>
+      <Text style={styles.sectionTitle}>3) Pick a date</Text>
+      <View style={styles.pickerRow}>
+        <DateTimePicker
+          mode="date"
+          value={date ?? new Date()}
+          onChange={(_, d) => d && setDate(d)}
+        />
+      </View>
+
+      <Text style={styles.sectionTitle}>4) Pick a time</Text>
+      <View style={styles.pickerRow}>
+        <DateTimePicker
+          mode="time"
+          value={time ?? new Date()}
+          onChange={(_, d) => d && setTime(d)}
+        />
+      </View>
+
+      <Pressable
+        style={[styles.primaryCta, !isReady && styles.disabled]}
+        disabled={!isReady}
+        onPress={() => {
+          if (!selectedDuration) return;
+          const checkoutUrl = CHECKOUT_URLS[selectedDuration.minutes as 30 | 60];
+          navigation.navigate('Checkout', {
+            service: selectedService,
+            minutes: selectedDuration.minutes,
+            price: selectedDuration.price,
+            datetime: new Date(
+              (date ?? new Date()).getFullYear(),
+              (date ?? new Date()).getMonth(),
+              (date ?? new Date()).getDate(),
+              (time ?? new Date()).getHours(),
+              (time ?? new Date()).getMinutes(),
+              0,
+              0,
+            ).toISOString(),
+            checkoutUrl,
+          });
+        }}
+      >
         <Text style={styles.primaryCtaText}>Continue</Text>
       </Pressable>
     </View>
@@ -81,23 +119,8 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
-  choice: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-  choiceSelected: {
-    backgroundColor: '#e0e7ff',
-    borderColor: '#6366f1',
-  },
-  choiceText: {
-    color: '#111827',
-  },
-  choiceTextSelected: {
-    color: '#1f2937',
-    fontWeight: '700',
+  pickerRow: {
+    marginBottom: 16,
   },
   primaryCta: {
     backgroundColor: '#2563eb',

@@ -6,9 +6,24 @@ import BookScreen from '@screens/BookScreen';
 import AboutScreen from '@screens/AboutScreen';
 import TestimonialsScreen from '@screens/TestimonialsScreen';
 import ContactScreen from '@screens/ContactScreen';
+import CheckoutScreen from '@screens/CheckoutScreen';
+import ConfirmationScreen from '@screens/ConfirmationScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
+  Checkout: {
+    service: string;
+    minutes: number;
+    price: number;
+    datetime: string;
+    checkoutUrl: string;
+  };
+  Confirmation: {
+    service: string;
+    minutes: number;
+    price: number;
+    datetime: string;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -34,6 +49,8 @@ export default function RootNavigator() {
         component={MainTabs}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
+      <Stack.Screen name="Confirmation" component={ConfirmationScreen} options={{ title: 'Confirmation' }} />
     </Stack.Navigator>
   );
 }
